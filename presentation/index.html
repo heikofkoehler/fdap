@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The FDAP Stack in Rust — Presentation</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+</head>
+<body class="bg-[var(--background)] text-[var(--foreground)] antialiased p-4 md:p-6">
+  <div class="max-w-5xl mx-auto space-y-4">
+    <!-- Top Header & Slide Navigation Bar -->
+    <div class="bg-[var(--card)] border border-[var(--border)] rounded-lg p-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <span class="px-2.5 py-1 rounded text-xs font-mono font-semibold bg-[var(--primary)] text-[var(--primary-foreground)]">
+          FDAP • RUST
+        </span>
+        <div>
+          <h1 class="text-sm font-semibold">Flight • DataFusion • Arrow • Parquet on MinIO</h1>
+          <p class="text-xs text-[var(--muted-foreground)]">Accompanying Interactive Presentation — <span class="font-mono">heikofkoehler/fdap</span></p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button id="prev-btn" onclick="changeSlide(-1)" class="px-3 py-1.5 text-xs font-medium rounded border border-[var(--border)] bg-[var(--background)] hover:opacity-80 disabled:opacity-40">
+          ← Prev
+        </button>
+        <span id="slide-counter" class="text-xs font-mono tabular-nums px-2 text-[var(--muted-foreground)]">
+          1 / 7
+        </span>
+        <button id="next-btn" onclick="changeSlide(1)" class="px-3 py-1.5 text-xs font-medium rounded bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 disabled:opacity-40">
+          Next →
+        </button>
+      </div>
+    </div>
+
+    <!-- Slide Progress Pills -->
+    <div id="slide-pills" class="grid grid-cols-7 gap-1.5 text-xs"></div>
+
+    <!-- Main Slide Stage -->
+    <div class="bg-[var(--card)] border border-[var(--border)] rounded-lg p-5 md:p-6 space-y-5">
+
+      <!-- SLIDE 0: Overview & Interactive Architecture -->
+      <section class="slide space-y-5" data-title="1. Overview & Architecture">
+        <div class="border-b border-[var(--border)] pb-3">
+          <div class="text-xs font-mono uppercase tracking-wider text-[var(--primary)]">Slide 1 — Composable Data Systems</div>
+          <h2 class="text-xl font-bold mt-0.5">The FDAP Stack in Rust Backed by MinIO Object Storage</h2>
+          <p class="text-xs text-[var(--muted-foreground)] mt-1">
+            Click any layer below to inspect how Arrow unifies in-memory compute, Parquet storage on MinIO, DataFusion SQL planning, and Arrow Flight gRPC streaming.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+          <!-- Interactive Stack Stack Diagram -->
+          <div class="md:col-span-6 space-y-2">
+            <button onclick="selectArchLayer('flight')" id="arch-btn-flight" class="w-full text-left p-3 rounded border border-[var(--border)] bg-[var(--background)] hover:border-[var(--primary)] transition">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-mono font-bold text-[var(--primary)]">F — LAYER 4: APACHE ARROW FLIGHT</span>
+                <span class="text-xs font-mono text-[var(--muted-foreground)]">src/flight.rs</span>
+              </div>
+              <div class="text-xs mt-1">Zero-serialization gRPC transport (<code class="font-mono">DoGet</code>, <code class="font-mono">DoPut</code>, <code class="font-mono">GetFlightInfo</code>)</div>
+            </button>
+
+            <div class="text-center text-xs font-mono text-[var(--muted-foreground)]">▲ ▼ Arrow IPC RecordBatch Streams (HTTP/2 gRPC)</div>
+
+            <button onclick="selectArchLayer('datafusion')" id="arch-btn-datafusion" class="w-full text-left p-3 rounded border border-[var(--border)] bg-[var(--background)] hover:border-[var(--primary)] transition">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-mono font-bold text-[var(--primary)]">D — LAYER 3: APACHE DATAFUSION</span>
+                <span class="text-xs font-mono text-[var(--muted-foreground)]">src/engine.rs</span>
+              </div>
+              <div class="text-xs mt-1">Vectorized SQL & DataFrame engine, custom UDFs & Parquet pushdown optimizer</div>
+            </button>
+
+            <div class="text-center text-xs font-mono text-[var(--muted-foreground)]">▲ ▼ Zero-Copy In-Memory Columnar Arrays</div>
+
+            <button onclick="selectArchLayer('arrow')" id="arch-btn-arrow" class="w-full text-left p-3 rounded border border-[var(--border)] bg-[var(--background)] hover:border-[var(--primary)] transition">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-mono font-bold text-[var(--primary)]">A — LAYER 1: APACHE ARROW</span>
+                <span class="text-xs font-mono text-[var(--muted-foreground)]">src/dataset.rs</span>
+              </div>
+              <div class="text-xs mt-1">Columnar <code class="font-mono">RecordBatch</code> memory layout, validity bitmaps & SIMD kernels</div>
+            </button>
+
+            <div class="text-center text-xs font-mono text-[var(--muted-foreground)]">▲ ▼ Async S3 HTTP Range Reads & ZSTD Multipart Writes</div>
+
+            <button onclick="selectArchLayer('parquet')" id="arch-btn-parquet" class="w-full text-left p-3 rounded border border-[var(--border)] bg-[var(--background)] hover:border-[var(--primary)] transition">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-mono font-bold text-[var(--primary)]">P — LAYER 2: PARQUET ON MINIO S3</span>
+                <span class="text-xs font-mono text-[var(--muted-foreground)]">src/parquet_io.rs • src/storage.rs</span>
+              </div>
+              <div class="text-xs mt-1">Row groups, min/max stats, Bloom filters & <code class="font-mono">s3://fdap-warehouse</code> on MinIO</div>
+            </button>
+          </div>
+
+          <!-- Selected Layer Details Panel -->
+          <div id="arch-detail-panel" class="md:col-span-6 p-4 rounded border border-[var(--border)] bg-[var(--background)] flex flex-col justify-between space-y-3">
+          </div>
+        </div>
+      </section>
+
+      <!-- SLIDE 1: Layer 1 - Apache Arrow -->
+      <section class="slide hidden space-y-4" data-title="2. Layer 1: Arrow">
+        <div class="border-b border-[var(--border)] pb-3 flex items-center justify-between">
+          <div>
+            <div class="text-xs font-mono uppercase tracking-wider text-[var(--primary)]">Slide 2 — Layer 1 (examples/01_arrow.rs)</div>
+            <h2 class="text-xl font-bold mt-0.5">Apache Arrow: Columnar Memory, Zero-Copy & SIMD Kernels</h2>
+          </div>
+          <code class="text-xs font-mono px-2.5 py-1 rounded bg-[var(--background)] border border-[var(--border)]">cargo run --example 01_arrow</code>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+          <div class="p-3 rounded border border-[var(--border)] bg-[var(--background)] space-y-1">
+            <div class="font-semibold text-[var(--primary)]">Columnar Buffer Layout</div>
+            <p class="text-[var(--muted-foreground)]">Contiguous typed buffers + separate validity bitmaps (<code class="font-mono">NullBuffer</code>), dictionary-encoded strings (<code class="font-mono">Dictionary&lt;Int32, Utf8&gt;</code>), and nested <code class="font-mono">StructArray</code>s.</p>
+          </div>
+          <div class="p-3 rounded border border-[var(--border)] bg-[var(--background)] space-y-1">
+            <div class="font-semibold text-[var(--primary)]">Zero-Copy Slicing</div>
+            <p class="text-[var(--muted-foreground)]"><code class="font-mono">batch.slice(offset, len)</code> shares the exact physical <code class="font-mono">Buffer</code> pointer without allocating or copying values (<code class="font-mono">orig_ptr + 8 == slice_ptr</code>).</p>
+          </div>
+          <div class="p-3 rounded border border-[var(--border)] bg-[var(--background)] space-y-1">
+            <div class="font-semibold text-[var(--primary)]">Vectorized Compute & IPC</div>
+            <p class="text-[var(--muted-foreground)]">Evaluates <code class="font-mono">sub</code>, <code class="font-mono">gt_eq</code>, <code class="font-mono">filter_record_batch</code>, <code class="font-mono">lexsort_to_indices</code>, and <code class="font-mono">StreamWriter</code> IPC framing over entire columns at once.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div class="p-3 rounded border border-[var(--border)] bg-[var(--background)]">
+            <div class="text-xs font-mono font-semibold text-[var(--muted-foreground)] mb-2">Code Snippet (examples/01_arrow.rs)</div>
+            <pre class="text-xs font-mono overflow-x-auto leading-relaxed"><code>// Zero-copy slice of rows [1..4]
+let sliced = batch.slice(1, 3);
+
+// Vectorized subtraction: headroom = budget - latency
+let headroom = sub(budget_col, lat_col)?;
+
+// Vectorized boolean predicate filter
+let breach_mask: BooleanArray = gt_eq(lat_col, budget_col)?;
+let breached = filter_record_batch(&amp;batch, &amp;breach_mask)?;
+
+// Top-3 sort via lexsort_to_indices + take_record_batch
+let idx = lexsort_to_indices(&amp;[SortColumn {
+    values: batch.column_by_name("latency_ms").unwrap().clone(),
+    options: Some(SortOptions { descending: true, nulls_first: false }),
+}], Some(3))?;
+let top3 = take_record_batch(&amp;batch, &amp;idx)?;</code></pre>
+          </div>
+          <div class="p-3 rounded border border-[var(--border)] bg-[var(--background)]">
+            <div class="text-xs font-mono font-semibold text-[var(--muted-foreground)] mb-2">Execution Output</div>
+            <pre class="text-xs font-mono overflow-x-auto leading-relaxed"><code>[2] Inspecting Physical Arrow Buffers &amp; Zero-Copy Slicing...
+  - `cpu_pct` column: len=6, null_count=1, buffers=1
+  - Validity bitmap valid row indices: [0, 1, 3, 4, 5]
+  - Zero-copy slice(offset=1, len=3): shares backing buffer = true
+
+[3] Vectorized Compute Kernels (`arrow::compute`)...
+  - `sla_budget_ms - latency_ms`: [87.6, -45.0, 81.8, -130.5, 91.1, -12.0]
+  - Aggregations: min=Some(8.9) ms, max=Some(230.5) ms, sum=Some(527.0) ms
+  - Filtered SLA Breaches (`latency_ms &gt;= sla_budget_ms`, 3 rows):
++----------+-------------------+--------------+---------+------------+
+| event_id | device_id         | region       | cpu_pct | latency_ms |
++----------+-------------------+--------------+---------+------------+
+| 1002     | dev-us-east-02    | us-east-1    | 88.1    | 145.0      |
+| 1004     | dev-eu-central-01 | eu-central-1 | 94.7    | 230.5      |
+| 1006     | dev-ap-south-01   | ap-south-1   | 76.4    | 112.0      |
++----------+-------------------+--------------+---------+------------+</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- SLIDE 2: Layer 2 - Apache Parquet on MinIO -->
+      <section class="slide hidden space-y-4" data-title="3. Layer 2: Parquet + MinIO">
+        <div class="border-b border-[var(--border)] pb-3 flex items-center justify-between">
+          <div>
+            <div class="text-xs font-mono uppercase tracking-wider text-[var(--primary)]">Slide 3 — Layer 2 (examples/02_parquet.rs • src/parquet_io.rs)</div>
+            <h2 class="text-xl font-bold mt-0.5">Apache Parquet on MinIO: Statistics, Bloom Filters & Pushdown</h2>
+          </div>
+          <code class="text-xs font-mono px-2.5 py-1 rounded bg-[var(--background)] border border-[var(--border)]">cargo run --example 02_parquet</code>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+          <div class="p-3 rounded border border-[var(--border)] bg-[var(--background)] space-y-1">
+            <div class="font-semibold text-[var(--primary)]">1. ZSTD + Bloom Filters on MinIO</div>
+            <p class="text-[var(--muted-foreground)]"><code class="font-mono">ParquetObjectWriter</code> streams Arrow batches to <code class="font-mono">s3://fdap-warehouse</code> with ZSTD level 3, page-level stats, and Bloom filters on <code class="font-mono">device_id</code> & <code class="font-mono">service</code>.</p>
+          </div>
+          <div class="p-3 rounded border border-[var(--border)] bg-[var(--background)] space-y-1">
+            <div class="font-semibold text-[var(--primary)]">2. Footer-Only S3 Range Read</div>
+            <p class="text-[var(--muted-foreground)]"><code class="font-mono">ParquetObjectReader</code> fetches only the footer bytes via HTTP Range <code class="font-mono">GET</code> to inspect row groups and column <code class="font-mono">min</code>/<code class="font-mono">max</code> statistics before reading data pages.</p>
+          </div>
+          <div class="p-3 rounded border border-[var(--border)] bg-[var(--background)] space-y-1">
+            <div class="font-semibold text-[var(--primary)]">3. Three-Stage Read Pruning</div>
+            <p class="text-[var(--muted-foreground)]">Combines <strong>Row Group pruning</strong> (via stats), <strong>RowFilter late materialization</strong> (<code class="font-mono">ArrowPredicateFn</code>), and <strong>Column Projection</strong> (<code class="font-mono">ProjectionMask</code>).</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div class="p-3 rounded border border-[var(--border)] bg-[var(--background)]">
+            <div class="text-xs font-mono font-semibold text-[var(--muted-foreground)] mb-2">Async Pushdown Reader (src/parquet_io.rs)</div>
+            <pre class="text-xs font-mono overflow-x-auto leading-relaxed"><code>let reader = ParquetObjectReader::new(storage.as_object_store(), path)
+    .with_file_size(head.size);
+let mut builder = ParquetRecordBatchStreamBuilder::new(reader).await?;
+
+// 1. Prune row groups where max(latency_ms) &lt; threshold
+selected_row_groups.retain(|&amp;rg_idx| {
+    if let Some(Statistics::Double(s)) = rg.column(lat_idx).statistics() {
+        return s.max_opt().copied().unwrap_or(f64::MAX) &gt;= threshold;
+    }
+    true
+});
+
+// 2. Push down RowFilter + ProjectionMask
+let predicate = ArrowPredicateFn::new(pred_mask, move |batch| { ... });
+builder = builder
+    .with_row_groups(selected_row_groups)
+    .with_row_filter(RowFilter::new(vec![Box::new(predicate)]))
+    .with_projection(ProjectionMask::roots(&amp;parquet_schema, cols));</code></pre>
+          </div>
+          <div class="p-3 rounded border border-[var(--border)] bg-[var(--background)]">
+            <div class="text-xs font-mono font-semibold text-[var(--muted-foreground)] mb-2">MinIO Parquet Inspection &amp; Pushdown Output</div>
+            <pre class="text-xs font-mono overflow-x-auto leading-relaxed"><code>[2] Writing 3 RecordBatches (150 rows) to s3://fdap-warehouse/...
+  - Wrote Parquet object: 150 rows across 3 row groups -&gt; 6347 bytes
+
+[3] Inspecting Parquet Footer on MinIO via Async Range Reader...
+  - RowGroup #0: 50 rows, uncompressed=2013 B, compressed=1246 B
+      col `event_id    ` | ZSTD(3) |  463 B -&gt; 201 B | min="10000", max="10049"
+      col `latency_ms  ` | ZSTD(3) |  463 B -&gt; 178 B | min="4.20",  max="388.50"
+
+[4] Reading with Projection &amp; Predicate `latency_ms &gt;= 380.0`...
+  - Row groups scanned after statistics pruning: 2 / 3
+  - Rows returned after RowFilter pushdown: 2 rows (5/10 columns)
++----------+-------------------+--------------+--------------+------------+
+| event_id | device_id         | region       | service      | latency_ms |
++----------+-------------------+--------------+--------------+------------+
+| 10029    | dev-eu-central-02 | eu-central-1 | compactor    | 388.5      |
+| 10116    | dev-eu-central-01 | eu-central-1 | query-router | 407.0      |
++----------+-------------------+--------------+--------------+------------+</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- SLIDE 3: Layer 3 - Apache DataFusion -->
+      <section class="slide hidden space-y-4" data-title="4. Layer 3: DataFusion">
+        <div class="border-b border-[var(--border)] pb-3 flex items-center justify-between">
+          <div>
+            <div class="text-xs font-mono uppercase tracking-wider text-[var(--primary)]">Slide 4 — Layer 3 (examples/03_datafusion.rs • src/engine.rs)</div>
+            <h2 class="text-xl font-bold mt-0.5">Apache DataFusion: SQL, DataFrames, Custom UDFs & Plan Pushdown</h2>
+          </div>
+          <code class="text-xs font-mono px-2.5 py-1 rounded bg-[var(--background)] border border-[var(--border)]">cargo run --example 03_datafusion</code>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div class="p-3 rounded border border-[var(--border)] bg-[var(--background)] space-y-2">
+            <div class="text-xs font-mono font-semibold text-[var(--primary)]">MinIO ListingTable + Custom Vectorized UDFs</div>
+            <pre class="text-xs font-mono overflow-x-auto leading-relaxed"><code>// Register MinIO bucket with DataFusion RuntimeEnv
+ctx.runtime_env()
+   .register_object_store(&amp;bucket_url, storage.as_object_store());
+
+// Register directory of Parquet partitions on MinIO as ListingTable
+let table_path = ListingTableUrl::parse("s3://fdap-warehouse/tables/telemetry/")?;
+let listing_options = ListingOptions::new(Arc::new(
+    ParquetFormat::default().with_enable_pruning(true)
+)).with_file_extension(".parquet");
+
+// Custom Vectorized Scalar UDFs registered on SessionContext:
+// - sla_tier(latency_ms: Float64, is_error: Boolean) -&gt; Utf8
+// - saturation_score(cpu_pct: Float64, memory_mb: Float64) -&gt; Float64</code></pre>
+          </div>
+
+          <div class="p-3 rounded border border-[var(--border)] bg-[var(--background)] space-y-2">
+            <div class="text-xs font-mono font-semibold text-[var(--primary)]">Physical Plan Pushdown into MinIO Parquet</div>
+            <pre class="text-xs font-mono overflow-x-auto leading-relaxed"><code>SortPreservingMergeExec: [latency_ms@3 DESC], fetch=5
+  SortExec: TopK(fetch=5), expr=[latency_ms@3 DESC]
+    FilterExec: latency_ms@3 &gt; 200 AND is_error@4
+      RepartitionExec: partitioning=RoundRobinBatch(4)
+        DataSourceExec:
+          file_groups={2 groups: [part-1.parquet, part-2.parquet]},
+          projection=[event_id, device_id, service, latency_ms, is_error],
+          file_type=parquet,
+          predicate=latency_ms@7 &gt; 200 AND is_error@9,
+          pruning_predicate=latency_ms_max@0 &gt; 200
+            AND (is_error_min@3 OR is_error_max@4)</code></pre>
+          </div>
+        </div>
+
+        <div class="p-3 rounded border border-[var(--border)] bg-[var(--background)]">
+          <div class="text-xs font-mono font-semibold text-[var(--muted-foreground)] mb-1">3-Table SQL Join + Custom Vectorized UDF Output</div>
+          <pre class="text-xs font-mono overflow-x-auto leading-relaxed"><code>+-------------------+-----------------------+---------------+--------------+--------------+----------------+-----------------+----------------+-----------------+
+| device_id         | tier                  | instance_type | total_events | error_events | avg_saturation | peak_latency_ms | worst_sla_tier | active_incident |
++-------------------+-----------------------+---------------+--------------+--------------+----------------+-----------------+----------------+-----------------+
+| dev-ap-south-02   | storage-tier-2        | i4i.4xlarge   | 50           | 2            | 49.02          | 351.5           | CRITICAL       | SEV-3           |
+| dev-eu-central-02 | background-compaction | r7g.4xlarge   | 50           | 2            | 46.46          | 240.5           | CRITICAL       | SEV-2           |
+| dev-eu-central-01 | mission-critical      | c7g.4xlarge   | 50           | 1            | 45.99          | 407.0           | CRITICAL       | NONE            |
+| dev-us-east-01    | mission-critical      | c7g.4xlarge   | 50           | 2            | 41.05          | 388.5           | CRITICAL       | SEV-1           |
++-------------------+-----------------------+---------------+--------------+--------------+----------------+-----------------+----------------+-----------------+</code></pre>
+        </div>
+      </section>
+
+      <!-- SLIDE 4: Layer 4 - Apache Arrow Flight -->
+      <section class="slide hidden space-y-4" data-title="5. Layer 4: Flight gRPC">
+        <div class="border-b border-[var(--border)] pb-3 flex items-center justify-between">
+          <div>
+            <div class="text-xs font-mono uppercase tracking-wider text-[var(--primary)]">Slide 5 — Layer 4 (examples/04_flight.rs • src/flight.rs)</div>
+            <h2 class="text-xl font-bold mt-0.5">Apache Arrow Flight: High-Speed gRPC Columnar Wire Transport</h2>
+          </div>
+          <code class="text-xs font-mono px-2.5 py-1 rounded bg-[var(--background)] border border-[var(--border)]">cargo run --example 04_flight</code>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+          <div class="p-3 rounded border border-[var(--border)] bg-[var(--background)] space-y-2">
+            <div class="font-semibold text-[var(--primary)]">Flight RPC Protocol Endpoints (<code class="font-mono">FdapFlightService</code>)</div>
+            <ul class="space-y-1.5 text-[var(--muted-foreground)]">
+              <li><code class="font-mono text-[var(--foreground)]">get_flight_info</code>: Plans SQL in DataFusion, encodes the output Arrow <code class="font-mono">Schema</code> and returns a <code class="font-mono">Ticket</code>.</li>
+              <li><code class="font-mono text-[var(--foreground)]">do_get</code>: Executes <code class="font-mono">df.execute_stream()</code> and streams Arrow IPC frames via <code class="font-mono">FlightDataEncoderBuilder</code>.</li>
+              <li><code class="font-mono text-[var(--foreground)]">do_put</code>: Decodes incoming <code class="font-mono">FlightRecordBatchStream</code>, writes a Parquet partition to MinIO, and updates DataFusion.</li>
+              <li><code class="font-mono text-[var(--foreground)]">list_flights</code> & <code class="font-mono text-[var(--foreground)]">do_action</code>: Exposes catalog discovery, <code class="font-mono">explain</code>, <code class="font-mono">seed_warehouse</code>, and health checks.</li>
+            </ul>
+          </div>
+
+          <div class="p-3 rounded border border-[var(--border)] bg-[var(--background)] space-y-2">
+            <div class="font-semibold text-[var(--primary)]">Streaming <code class="font-mono">do_get</code> Implementation (src/flight.rs)</div>
+            <pre class="text-xs font-mono overflow-x-auto leading-relaxed"><code>async fn do_get(
+    &amp;self,
+    request: Request&lt;Ticket&gt;,
+) -&gt; Result&lt;Response&lt;Self::DoGetStream&gt;, Status&gt; {
+    let sql = String::from_utf8(request.into_inner().ticket.to_vec())?;
+    let df = self.engine.session_context().sql(&amp;sql).await?;
+    let schema = df.schema().inner().clone();
+
+    let batch_stream = df.execute_stream().await?
+        .map_err(|e| FlightError::ExternalError(Box::new(e)));
+
+    let flight_data_stream = FlightDataEncoderBuilder::new()
+        .with_schema(schema)
+        .build(batch_stream)
+        .map_err(|e| Status::internal(e.to_string()));
+
+    Ok(Response::new(Box::pin(flight_data_stream)))
+}</code></pre>
+          </div>
+        </div>
+
+        <div class="p-3 rounded border border-[var(--border)] bg-[var(--background)]">
+          <div class="text-xs font-mono font-semibold text-[var(--muted-foreground)] mb-1">Example 04 Output: DoPut Ingestion + ListFlights + GetFlightInfo/DoGet</div>
+          <pre class="text-xs font-mono overflow-x-auto leading-relaxed"><code>[3] Streaming Custom Arrow RecordBatches to Server via `DoPut`...
+  - Server persisted `DoPut` stream to s3://fdap-warehouse/tables/flight_benchmarks/part-...parquet (4 rows, 1721 bytes)
+[5] Planning &amp; Streaming Query Results via `GetFlightInfo` -&gt; `DoGet`...
++--------+-------------------------------------+-----------------+------------------+
+| run_id | transport                           | throughput_gbps | cpu_overhead_pct |
++--------+-------------------------------------+-----------------+------------------+
+| 4      | Apache Arrow Flight (IPC over gRPC) | 18.75           | 6.8              |
+| 2      | gRPC Protobuf Row-by-Row            | 1.85            | 46.2             |
+| 3      | JDBC / ODBC Row Cursor              | 1.1             | 54.0             |
+| 1      | REST JSON over HTTP/1.1             | 0.42            | 78.5             |
++--------+-------------------------------------+-----------------+------------------+</code></pre>
+        </div>
+      </section>
+
+      <!-- SLIDE 5: Full FDAP Query Engine -->
+      <section class="slide hidden space-y-4" data-title="6. Unified FDAP Engine">
+        <div class="border-b border-[var(--border)] pb-3 flex items-center justify-between">
+          <div>
+            <div class="text-xs font-mono uppercase tracking-wider text-[var(--primary)]">Slide 6 — Complete Stack (examples/05_fdap_query_engine.rs)</div>
+            <h2 class="text-xl font-bold mt-0.5">Unified FDAP Query Engine Backed by Parquet on MinIO</h2>
+          </div>
+          <code class="text-xs font-mono px-2.5 py-1 rounded bg-[var(--background)] border border-[var(--border)]">cargo run --example 05_fdap_query_engine</code>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5 text-xs">
+          <div class="p-3 rounded border border-[var(--border)] bg-[var(--background)]">
+            <div class="text-[var(--muted-foreground)]">MinIO Warehouse Bucket</div>
+            <div class="text-sm font-mono font-bold mt-0.5">s3://fdap-warehouse</div>
+            <div class="text-[var(--muted-foreground)] mt-0.5">Auto-bootstrapped via SigV4</div>
+          </div>
+          <div class="p-3 rounded border border-[var(--border)] bg-[var(--background)]">
+            <div class="text-[var(--muted-foreground)]">Registered Tables</div>
+            <div class="text-sm font-mono font-bold mt-0.5">3 Core + Dynamic DoPut</div>
+            <div class="text-[var(--muted-foreground)] mt-0.5">telemetry, devices, incidents</div>
+          </div>
+          <div class="p-3 rounded border border-[var(--border)] bg-[var(--background)]">
+            <div class="text-[var(--muted-foreground)]">Telemetry Partition Files</div>
+            <div class="text-sm font-mono font-bold mt-0.5">3 Parquet Objects</div>
+            <div class="text-[var(--muted-foreground)] mt-0.5">450 rows (21.1 KB ZSTD)</div>
+          </div>
+          <div class="p-3 rounded border border-[var(--border)] bg-[var(--background)]">
+            <div class="text-[var(--muted-foreground)]">Flight Transport</div>
+            <div class="text-sm font-mono font-bold mt-0.5">HTTP/2 gRPC + IPC</div>
+            <div class="text-[var(--muted-foreground)] mt-0.5">Streaming DoPut &amp; DoGet</div>
+          </div>
+        </div>
+
+        <div class="p-3 rounded border border-[var(--border)] bg-[var(--background)]">
+          <div class="text-xs font-mono font-semibold text-[var(--muted-foreground)] mb-1">End-to-End Query Engine Showcase Output</div>
+          <pre class="text-xs font-mono overflow-x-auto leading-relaxed"><code>[3] Seeding MinIO Parquet Warehouse via Flight Action `seed_warehouse`...
+  - Wrote s3://fdap-warehouse/tables/telemetry/part-1.parquet | 200 rows | 2 row groups | 8323 bytes
+  - Wrote s3://fdap-warehouse/tables/telemetry/part-2.parquet | 200 rows | 2 row groups | 8320 bytes
+  - Wrote s3://fdap-warehouse/tables/devices/part-1.parquet   |   8 rows | 1 row groups | 2305 bytes
+  - Wrote s3://fdap-warehouse/tables/incidents/part-1.parquet |   5 rows | 1 row groups | 2166 bytes
+
+[4] Ingesting Live Arrow RecordBatches into `telemetry` via Flight `DoPut`...
+  - Appended new Parquet partition via `DoPut`: 50 rows, 4493 bytes (Total: 450 rows across 3 files)
+
+[8] Query #3 over Flight: Window Function (Top Latency Outlier per Region)...
++----------------+-------------------+--------------+----------+------------+-------------+
+| region         | device_id         | service      | event_id | latency_ms | status_code |
++----------------+-------------------+--------------+----------+------------+-------------+
+| eu-central-1   | dev-eu-central-01 | query-router | 10116    | 407.0      | 503         |
+| us-east-1      | dev-us-east-01    | query-router | 10232    | 388.5      | 503         |
+| ap-southeast-1 | dev-ap-south-02   | storage-node | 10087    | 351.5      | 429         |
+| us-west-2      | dev-us-west-02    | storage-node | 10203    | 333.0      | 429         |
++----------------+-------------------+--------------+----------+------------+-------------+</code></pre>
+        </div>
+      </section>
+
+      <!-- SLIDE 6: CLI, Server & Running Guide -->
+      <section class="slide hidden space-y-4" data-title="7. CLI & Quick Start">
+        <div class="border-b border-[var(--border)] pb-3">
+          <div class="text-xs font-mono uppercase tracking-wider text-[var(--primary)]">Slide 7 — Running the Stack</div>
+          <h2 class="text-xl font-bold mt-0.5">Repository Guide, Standalone Server & Flight CLI</h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+          <div class="p-3.5 rounded border border-[var(--border)] bg-[var(--background)] space-y-2">
+            <div class="font-semibold text-[var(--primary)]">1. Run Layer-by-Layer Examples</div>
+            <pre class="font-mono overflow-x-auto leading-relaxed"><code># Start local MinIO (or let FdapEngine auto-start it)
+./scripts/minio.sh start
+
+# Layer 1: Apache Arrow
+cargo run --example 01_arrow
+
+# Layer 2: Apache Parquet on MinIO
+cargo run --example 02_parquet
+
+# Layer 3: Apache DataFusion
+cargo run --example 03_datafusion
+
+# Layer 4: Apache Arrow Flight
+cargo run --example 04_flight
+
+# Full FDAP Query Engine Showcase
+cargo run --example 05_fdap_query_engine</code></pre>
+          </div>
+
+          <div class="p-3.5 rounded border border-[var(--border)] bg-[var(--background)] space-y-2">
+            <div class="font-semibold text-[var(--primary)]">2. Run Standalone Server &amp; Flight CLI</div>
+            <pre class="font-mono overflow-x-auto leading-relaxed"><code># Terminal 1: Start FDAP Flight Server on :50051
+cargo run --bin fdap-server
+
+# Terminal 2: Inspect MinIO warehouse catalog
+cargo run --bin fdap-cli -- tables
+
+# Execute SQL over Arrow Flight
+cargo run --bin fdap-cli -- query \
+  "SELECT region, COUNT(*) FROM telemetry GROUP BY region"
+
+# Inspect DataFusion physical plan &amp; pushdown
+cargo run --bin fdap-cli -- explain \
+  "SELECT device_id FROM telemetry WHERE latency_ms &gt; 250.0"
+
+# Stream live Arrow batches into MinIO via Flight DoPut
+cargo run --bin fdap-cli -- ingest --table telemetry --rows 100</code></pre>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <script>
+    const archDetails = {
+      flight: {
+        badge: "LAYER 4 • APACHE ARROW FLIGHT",
+        title: "High-Throughput gRPC Wire Protocol (src/flight.rs)",
+        desc: "Eliminates row-level serialization overhead between client and server by streaming Arrow IPC RecordBatches directly over HTTP/2 gRPC.",
+        bullets: [
+          "FdapFlightService implements FlightService (GetFlightInfo, DoGet, DoPut, ListFlights, DoAction).",
+          "DoPut decodes incoming FlightData frames via FlightRecordBatchStream and writes new Parquet partitions to MinIO.",
+          "DoGet streams DataFusion's physical SendableRecordBatchStream directly to the client via FlightDataEncoderBuilder."
+        ],
+        cmd: "cargo run --example 04_flight"
+      },
+      datafusion: {
+        badge: "LAYER 3 • APACHE DATAFUSION",
+        title: "Vectorized SQL & DataFrame Query Engine (src/engine.rs)",
+        desc: "Provides SQL parsing, logical/physical optimization, custom vectorized UDFs, and multi-partition Parquet ListingTable scans over MinIO.",
+        bullets: [
+          "Registers s3://fdap-warehouse via RuntimeEnv::register_object_store.",
+          "Custom vectorized Scalar UDFs: sla_tier(latency_ms, is_error) and saturation_score(cpu_pct, memory_mb).",
+          "Pushes column projections, predicates, and min/max pruning_predicate down into DataSourceExec (Parquet)."
+        ],
+        cmd: "cargo run --example 03_datafusion"
+      },
+      arrow: {
+        badge: "LAYER 1 • APACHE ARROW",
+        title: "In-Memory Columnar Format & Compute Kernels (examples/01_arrow.rs)",
+        desc: "The universal in-memory layer across the entire FDAP stack, enabling zero-copy slicing and SIMD vectorized compute.",
+        bullets: [
+          "Contiguous typed value buffers, validity bitmaps (NullBuffer), DictionaryArray, and nested StructArray.",
+          "Zero-copy RecordBatch::slice shares physical backing buffers across operators.",
+          "Vectorized compute kernels: arithmetic (sub), comparison (gt_eq), filter_record_batch, lexsort_to_indices."
+        ],
+        cmd: "cargo run --example 01_arrow"
+      },
+      parquet: {
+        badge: "LAYER 2 • APACHE PARQUET + MINIO",
+        title: "Compressed Columnar Storage on MinIO S3 (src/parquet_io.rs • src/storage.rs)",
+        desc: "Persists Arrow batches as ZSTD-compressed Parquet files on local MinIO object storage and reads them back using selective HTTP Range requests.",
+        bullets: [
+          "MinioStorage connects to http://127.0.0.1:9000 and bootstraps s3://fdap-warehouse via AWS SigV4.",
+          "AsyncArrowWriter + ParquetObjectWriter write ZSTD-compressed row groups with page stats and Bloom filters.",
+          "ParquetObjectReader reads only the footer + projected column chunks that pass row-group statistics and RowFilter."
+        ],
+        cmd: "cargo run --example 02_parquet"
+      }
+    };
+
+    let currentSlide = 0;
+    const slides = document.querySelectorAll(".slide");
+
+    function renderPills() {
+      const container = document.getElementById("slide-pills");
+      container.innerHTML = "";
+      slides.forEach((s, idx) => {
+        const btn = document.createElement("button");
+        const active = idx === currentSlide;
+        btn.className = `px-2 py-1.5 rounded text-left truncate border transition ${
+          active
+            ? "bg-[var(--primary)] text-[var(--primary-foreground)] border-[var(--primary)] font-semibold"
+            : "bg-[var(--card)] text-[var(--muted-foreground)] border-[var(--border)] hover:text-[var(--foreground)]"
+        }`;
+        btn.textContent = s.getAttribute("data-title");
+        btn.onclick = () => goToSlide(idx);
+        container.appendChild(btn);
+      });
+    }
+
+    function goToSlide(idx) {
+      currentSlide = Math.max(0, Math.min(slides.length - 1, idx));
+      slides.forEach((s, i) => {
+        s.classList.toggle("hidden", i !== currentSlide);
+      });
+      document.getElementById("slide-counter").textContent = `${currentSlide + 1} / ${slides.length}`;
+      document.getElementById("prev-btn").disabled = currentSlide === 0;
+      document.getElementById("next-btn").disabled = currentSlide === slides.length - 1;
+      renderPills();
+    }
+
+    function changeSlide(delta) {
+      goToSlide(currentSlide + delta);
+    }
+
+    function selectArchLayer(key) {
+      const info = archDetails[key];
+      ["flight", "datafusion", "arrow", "parquet"].forEach((k) => {
+        const btn = document.getElementById(`arch-btn-${k}`);
+        if (k === key) {
+          btn.classList.add("border-[var(--primary)]");
+        } else {
+          btn.classList.remove("border-[var(--primary)]");
+        }
+      });
+
+      const panel = document.getElementById("arch-detail-panel");
+      panel.innerHTML = `
+        <div class="space-y-3">
+          <div class="inline-block px-2 py-0.5 rounded text-xs font-mono bg-[var(--card)] border border-[var(--border)] text-[var(--primary)]">
+            ${info.badge}
+          </div>
+          <h3 class="text-base font-bold">${info.title}</h3>
+          <p class="text-xs text-[var(--muted-foreground)] leading-relaxed">${info.desc}</p>
+          <ul class="space-y-2 text-xs pt-1">
+            ${info.bullets.map((b) => `<li class="flex items-start gap-2"><span class="text-[var(--primary)] font-bold">•</span><span>${b}</span></li>`).join("")}
+          </ul>
+        </div>
+        <div class="pt-3 border-t border-[var(--border)] flex items-center justify-between text-xs">
+          <span class="text-[var(--muted-foreground)]">Run layer example:</span>
+          <code class="font-mono px-2 py-1 rounded bg-[var(--card)] border border-[var(--border)]">${info.cmd}</code>
+        </div>
+      `;
+    }
+
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight") changeSlide(1);
+      if (e.key === "ArrowLeft") changeSlide(-1);
+    });
+
+    selectArchLayer("flight");
+    goToSlide(0);
+  </script>
+</body>
+</html>

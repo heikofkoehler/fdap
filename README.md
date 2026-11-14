@@ -58,6 +58,8 @@ An end-to-end exploration and implementation of the **FDAP** modern analytical d
 | [`src/flight.rs`](src/flight.rs) | `FdapFlightService` gRPC server and `FdapFlightClient` implementation. |
 | [`src/bin/fdap-server.rs`](src/bin/fdap-server.rs) | Standalone FDAP Query Engine server listening on `127.0.0.1:50051`. |
 | [`src/bin/fdap-cli.rs`](src/bin/fdap-cli.rs) | CLI client to list MinIO tables, run SQL queries, inspect plans, and stream Arrow batches into MinIO over Flight. |
+| [`presentation/SLIDES.md`](presentation/SLIDES.md) | Accompanying Markdown / Marp slide deck walking through each layer of the FDAP stack and the unified query engine. |
+| [`presentation/index.html`](presentation/index.html) | Interactive HTML slide deck with an interactive layer explorer, code snippets, and execution outputs. |
 
 ---
 
